@@ -5,10 +5,10 @@ $blk_size1 = 16;
 $blk_size2 = 128 - $blk_size1;
 $num_iters = 4000;
 
-# Open output file
+# 출력 파일을 연다
 open OUTFILE, ">$out_filename" or die "Cannot create $out_filename\n";
 
-# Calculate misc parameters
+# 기타 파라미터를 계산한다
 $blk_size12 = $blk_size1 + $blk_size2;
 $suggested_heap_size = ($blk_size1 + $blk_size2 + $blk_size12)*$num_iters + 100;
 $num_blocks = 3*$num_iters;
