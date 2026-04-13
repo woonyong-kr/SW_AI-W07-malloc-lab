@@ -26,7 +26,7 @@ void mem_init(void)
 {
     /* 사용 가능한 가상 메모리를 모델링할 저장 공간을 할당한다 */
     if ((mem_start_brk = (char *)malloc(MAX_HEAP)) == NULL) {
-	fprintf(stderr, "mem_init_vm: malloc error\n");
+	fprintf(stderr, "mem_init_vm: malloc 오류\n");
 	exit(1);
     }
 
@@ -60,7 +60,7 @@ void *mem_sbrk(int incr)
 
     if ( (incr < 0) || ((mem_brk + incr) > mem_max_addr)) {
 	errno = ENOMEM;
-	fprintf(stderr, "ERROR: mem_sbrk failed. Ran out of memory...\n");
+	fprintf(stderr, "오류: mem_sbrk에 실패했습니다. 메모리가 부족합니다...\n");
 	return (void *)-1;
     }
     mem_brk += incr;

@@ -64,7 +64,7 @@ double get_counter()
     hi = ncyc_hi - cyc_hi - borrow;
     result = (double) hi * (1 << 30) * 4 + lo;
     if (result < 0) {
-	fprintf(stderr, "Error: counter returns neg value: %.0f\n", result);
+	fprintf(stderr, "오류: 카운터가 음수 값을 반환했습니다: %.0f\n", result);
     }
     return result;
 }
@@ -124,7 +124,7 @@ double get_counter()
     hi = ncyc_hi - cyc_hi - borrow;
     result = (double) hi * (1 << 30) * 4 + lo;
     if (result < 0) {
-	fprintf(stderr, "Error: Cycle counter returning negative value: %.0f\n", result);
+	fprintf(stderr, "오류: 사이클 카운터가 음수 값을 반환했습니다: %.0f\n", result);
     }
     return result;
 }
@@ -140,17 +140,17 @@ double get_counter()
 
 void start_counter()
 {
-    printf("ERROR: You are trying to use a start_counter routine in clock.c\n");
-    printf("that has not been implemented yet on this platform.\n");
-    printf("Please choose another timing package in config.h.\n");
+    printf("오류: clock.c의 start_counter 루틴은\n");
+    printf("이 플랫폼에서는 아직 구현되지 않았습니다.\n");
+    printf("config.h에서 다른 시간 측정 패키지를 선택해 주세요.\n");
     exit(1);
 }
 
 double get_counter() 
 {
-    printf("ERROR: You are trying to use a get_counter routine in clock.c\n");
-    printf("that has not been implemented yet on this platform.\n");
-    printf("Please choose another timing package in config.h.\n");
+    printf("오류: clock.c의 get_counter 루틴은\n");
+    printf("이 플랫폼에서는 아직 구현되지 않았습니다.\n");
+    printf("config.h에서 다른 시간 측정 패키지를 선택해 주세요.\n");
     exit(1);
 }
 #endif
@@ -185,7 +185,7 @@ double mhz_full(int verbose, int sleeptime)
     sleep(sleeptime);
     rate = get_counter() / (1e6*sleeptime);
     if (verbose) 
-	printf("Processor clock rate ~= %.1f MHz\n", rate);
+	printf("프로세서 클록 속도 ~= %.1f MHz\n", rate);
     return rate;
 }
 /* $end mhz */
@@ -239,7 +239,7 @@ static void callibrate(int verbose)
 	}
     }
     if (verbose)
-	printf("Setting cyc_per_tick to %f\n", cyc_per_tick);
+	printf("cyc_per_tick을 %f로 설정합니다\n", cyc_per_tick);
 }
 
 static clock_t start_tick = 0;

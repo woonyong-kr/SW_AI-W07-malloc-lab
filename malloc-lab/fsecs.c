@@ -21,7 +21,7 @@ void init_fsecs(void)
 
 #if USE_FCYC
     if (verbose)
-	printf("Measuring performance with a cycle counter.\n");
+	printf("사이클 카운터로 성능을 측정합니다.\n");
 
     /* fcyc 패키지의 핵심 파라미터를 설정한다 */
     set_fcyc_maxsamples(20); 
@@ -32,10 +32,10 @@ void init_fsecs(void)
     Mhz = mhz(verbose > 0);
 #elif USE_ITIMER
     if (verbose)
-	printf("Measuring performance with the interval timer.\n");
+	printf("인터벌 타이머로 성능을 측정합니다.\n");
 #elif USE_GETTOD
     if (verbose)
-	printf("Measuring performance with gettimeofday().\n");
+	printf("gettimeofday()로 성능을 측정합니다.\n");
 #endif
 }
 
@@ -53,5 +53,4 @@ double fsecs(fsecs_test_funct f, void *argp)
     return ftimer_gettod(f, argp, 10);
 #endif 
 }
-
 

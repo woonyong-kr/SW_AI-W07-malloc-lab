@@ -168,7 +168,7 @@ int main(int argc, char **argv)
 	 */
 	while ((c = getopt(argc, argv, "f:t:hvVgal")) != EOF)
 	{
-		printf("getopt returned: %d\n", c); // 디버깅용 출력 추가
+		printf("getopt 반환값: %d\n", c); // 디버깅용 출력 추가
 
 		switch (c)
 		{
@@ -178,7 +178,7 @@ int main(int argc, char **argv)
 		case 'f': /* 특정 trace 파일 하나만 사용(현재 디렉터리 기준 상대 경로) */
 			num_tracefiles = 1;
 			if ((tracefiles = realloc(tracefiles, 2 * sizeof(char *))) == NULL)
-				unix_error("ERROR: realloc failed in main");
+				unix_error("오류: main에서 realloc에 실패했습니다");
 			strcpy(tracedir, "./");
 			tracefiles[0] = strdup(optarg);
 			tracefiles[1] = NULL;
@@ -219,27 +219,27 @@ int main(int argc, char **argv)
 		/* 학생은 팀 정보를 반드시 입력해야 한다 */
 		if (!strcmp(team.teamname, ""))
 		{
-			printf("ERROR: Please provide the information about your team in mm.c.\n");
+			printf("오류: mm.c에 팀 정보를 입력해 주세요.\n");
 			exit(1);
 		}
 		else
-			printf("Team Name:%s\n", team.teamname);
+			printf("팀 이름:%s\n", team.teamname);
 		if ((*team.name1 == '\0') || (*team.id1 == '\0'))
 		{
-			printf("ERROR.  You must fill in all team member 1 fields!\n");
+			printf("오류: 팀원 1의 정보를 모두 입력해야 합니다.\n");
 			exit(1);
 		}
 		else
-			printf("Member 1 :%s:%s\n", team.name1, team.id1);
+			printf("팀원 1:%s:%s\n", team.name1, team.id1);
 
 		if (((*team.name2 != '\0') && (*team.id2 == '\0')) ||
 			((*team.name2 == '\0') && (*team.id2 != '\0')))
 		{
-			printf("ERROR.  You must fill in all or none of the team member 2 ID fields!\n");
+			printf("오류: 팀원 2 정보는 모두 입력하거나 모두 비워야 합니다.\n");
 			exit(1);
 		}
 		else if (*team.name2 != '\0')
-			printf("Member 2 :%s:%s\n", team.name2, team.id2);
+			printf("팀원 2:%s:%s\n", team.name2, team.id2);
 	}
 
 	/*
@@ -250,7 +250,7 @@ int main(int argc, char **argv)
 	{
 		tracefiles = default_tracefiles;
 		num_tracefiles = sizeof(default_tracefiles) / sizeof(char *) - 1;
-		printf("Using default tracefiles in %s\n", tracedir);
+		printf("%s의 기본 trace 파일을 사용합니다\n", tracedir);
 	}
 
 	/* 시간 측정 패키지를 초기화한다 */
@@ -262,12 +262,12 @@ int main(int argc, char **argv)
 	if (run_libc)
 	{
 		if (verbose > 1)
-			printf("\nTesting libc malloc\n");
+			printf("\nlibc malloc을 테스트합니다\n");
 
 		/* trace 파일마다 하나씩 stats_t를 가지는 libc 통계 배열을 할당한다 */
 		libc_stats = (stats_t *)calloc(num_tracefiles, sizeof(stats_t));
 		if (libc_stats == NULL)
-			unix_error("libc_stats calloc in main failed");
+			unix_error("main에서 libc_stats calloc에 실패했습니다");
 
 		/* K-best 방식을 사용해 libc malloc 패키지를 평가한다 */
 		for (i = 0; i < num_tracefiles; i++)
@@ -275,13 +275,13 @@ int main(int argc, char **argv)
 			trace = read_trace(tracedir, tracefiles[i]);
 			libc_stats[i].ops = trace->num_ops;
 			if (verbose > 1)
-				printf("Checking libc malloc for correctness, ");
+				printf("libc malloc의 정확성을 검사하고, ");
 			libc_stats[i].valid = eval_libc_valid(trace, i);
 			if (libc_stats[i].valid)
 			{
 				speed_params.trace = trace;
 				if (verbose > 1)
-					printf("and performance.\n");
+					printf("성능도 측정합니다.\n");
 				libc_stats[i].secs = fsecs(eval_libc_speed, &speed_params);
 			}
 			free_trace(trace);
@@ -290,7 +290,7 @@ int main(int argc, char **argv)
 		/* libc 결과를 간단한 표로 출력한다 */
 		if (verbose)
 		{
-			printf("\nResults for libc malloc:\n");
+			printf("\nlibc malloc 결과:\n");
 			printresults(num_tracefiles, libc_stats);
 		}
 	}
@@ -299,12 +299,12 @@ int main(int argc, char **argv)
 	 * 학생의 mm 패키지는 항상 실행하고 평가한다
 	 */
 	if (verbose > 1)
-		printf("\nTesting mm malloc\n");
+		printf("\nmm malloc을 테스트합니다\n");
 
 	/* trace 파일마다 하나씩 stats_t를 가지는 mm 통계 배열을 할당한다 */
 	mm_stats = (stats_t *)calloc(num_tracefiles, sizeof(stats_t));
 	if (mm_stats == NULL)
-		unix_error("mm_stats calloc in main failed");
+		unix_error("main에서 mm_stats calloc에 실패했습니다");
 
 	/* memlib.c의 시뮬레이션 메모리 시스템을 초기화한다 */
 	mem_init();
@@ -315,17 +315,17 @@ int main(int argc, char **argv)
 		trace = read_trace(tracedir, tracefiles[i]);
 		mm_stats[i].ops = trace->num_ops;
 		if (verbose > 1)
-			printf("Checking mm_malloc for correctness, ");
+			printf("mm_malloc의 정확성을 검사하고, ");
 		mm_stats[i].valid = eval_mm_valid(trace, i, &ranges);
 		if (mm_stats[i].valid)
 		{
 			if (verbose > 1)
-				printf("efficiency, ");
+				printf("효율을 확인하고, ");
 			mm_stats[i].util = eval_mm_util(trace, i, &ranges);
 			speed_params.trace = trace;
 			speed_params.ranges = ranges;
 			if (verbose > 1)
-				printf("and performance.\n");
+				printf("성능도 측정합니다.\n");
 			mm_stats[i].secs = fsecs(eval_mm_speed, &speed_params);
 		}
 		free_trace(trace);
@@ -334,7 +334,7 @@ int main(int argc, char **argv)
 	/* mm 결과를 간단한 표로 출력한다 */
 	if (verbose)
 	{
-		printf("\nResults for mm malloc:\n");
+		printf("\nmm malloc 결과:\n");
 		printresults(num_tracefiles, mm_stats);
 		printf("\n");
 	}
@@ -375,7 +375,7 @@ int main(int argc, char **argv)
 		}
 
 		perfindex = (p1 + p2) * 100.0;
-		printf("Perf index = %.0f (util) + %.0f (thru) = %.0f/100\n",
+		printf("성능 지수 = %.0f(활용도) + %.0f(처리량) = %.0f/100\n",
 			   p1 * 100,
 			   p2 * 100,
 			   perfindex);
@@ -383,7 +383,7 @@ int main(int argc, char **argv)
 	else
 	{ /* 오류가 있었다 */
 		perfindex = 0.0;
-		printf("Terminated with %d errors\n", errors);
+		printf("오류 %d개로 종료했습니다\n", errors);
 	}
 
 	if (autograder)
@@ -419,7 +419,7 @@ static int add_range(range_t **ranges, char *lo, int size,
 	/* 페이로드 주소는 ALIGNMENT 바이트 정렬이어야 한다 */
 	if (!IS_ALIGNED(lo))
 	{
-		sprintf(msg, "Payload address (%p) not aligned to %d bytes",
+		sprintf(msg, "페이로드 주소 (%p)가 %d바이트 정렬이 아닙니다",
 				lo, ALIGNMENT);
 		malloc_error(tracenum, opnum, msg);
 		return 0;
@@ -429,7 +429,7 @@ static int add_range(range_t **ranges, char *lo, int size,
 	if ((lo < (char *)mem_heap_lo()) || (lo > (char *)mem_heap_hi()) ||
 		(hi < (char *)mem_heap_lo()) || (hi > (char *)mem_heap_hi()))
 	{
-		sprintf(msg, "Payload (%p:%p) lies outside heap (%p:%p)",
+		sprintf(msg, "페이로드 (%p:%p)가 힙 범위 (%p:%p) 밖에 있습니다",
 				lo, hi, mem_heap_lo(), mem_heap_hi());
 		malloc_error(tracenum, opnum, msg);
 		return 0;
@@ -441,7 +441,7 @@ static int add_range(range_t **ranges, char *lo, int size,
 		if ((lo >= p->lo && lo <= p->hi) ||
 			(hi >= p->lo && hi <= p->hi))
 		{
-			sprintf(msg, "Payload (%p:%p) overlaps another payload (%p:%p)\n",
+			sprintf(msg, "페이로드 (%p:%p)가 다른 페이로드 (%p:%p)와 겹칩니다\n",
 					lo, hi, p->lo, p->hi);
 			malloc_error(tracenum, opnum, msg);
 			return 0;
@@ -453,7 +453,7 @@ static int add_range(range_t **ranges, char *lo, int size,
 	 * 이 블록의 범위를 range 리스트에 기록한다.
 	 */
 	if ((p = (range_t *)malloc(sizeof(range_t))) == NULL)
-		unix_error("malloc error in add_range");
+		unix_error("add_range에서 malloc 오류가 발생했습니다");
 	p->next = *ranges;
 	p->lo = lo;
 	p->hi = hi;
@@ -517,18 +517,18 @@ static trace_t *read_trace(char *tracedir, char *filename)
 	unsigned op_index;
 
 	if (verbose > 1)
-		printf("Reading tracefile: %s\n", filename);
+		printf("trace 파일을 읽는 중: %s\n", filename);
 
 	/* trace 레코드를 할당한다 */
 	if ((trace = (trace_t *)malloc(sizeof(trace_t))) == NULL)
-		unix_error("malloc 1 failed in read_trance");
+		unix_error("read_trace에서 첫 번째 malloc에 실패했습니다");
 
 	/* trace 파일 헤더를 읽는다 */
 	strcpy(path, tracedir);
 	strcat(path, filename);
 	if ((tracefile = fopen(path, "r")) == NULL)
 	{
-		sprintf(msg, "Could not open %s in read_trace", path);
+		sprintf(msg, "read_trace에서 %s 파일을 열 수 없습니다", path);
 		unix_error(msg);
 	}
 	fscanf(tracefile, "%d", &(trace->sugg_heapsize)); /* 사용하지 않음 */
@@ -539,17 +539,17 @@ static trace_t *read_trace(char *tracedir, char *filename)
 	/* trace의 각 요청 줄은 이 배열에 저장한다 */
 	if ((trace->ops =
 			 (traceop_t *)malloc(trace->num_ops * sizeof(traceop_t))) == NULL)
-		unix_error("malloc 2 failed in read_trace");
+		unix_error("read_trace에서 두 번째 malloc에 실패했습니다");
 
 	/* 할당된 블록 포인터 배열은 여기에 저장한다 */
 	if ((trace->blocks =
 			 (char **)malloc(trace->num_ids * sizeof(char *))) == NULL)
-		unix_error("malloc 3 failed in read_trace");
+		unix_error("read_trace에서 세 번째 malloc에 실패했습니다");
 
 	/* 각 블록에 대응하는 바이트 크기도 함께 저장한다 */
 	if ((trace->block_sizes =
 			 (size_t *)malloc(trace->num_ids * sizeof(size_t))) == NULL)
-		unix_error("malloc 4 failed in read_trace");
+		unix_error("read_trace에서 네 번째 malloc에 실패했습니다");
 
 	/* trace 파일의 모든 요청 줄을 읽는다 */
 	index = 0;
@@ -578,8 +578,8 @@ static trace_t *read_trace(char *tracedir, char *filename)
 			trace->ops[op_index].index = index;
 			break;
 		default:
-			printf("Bogus type character (%c) in tracefile %s\n",
-				   type[0], path);
+			printf("trace 파일 %s에 잘못된 타입 문자 (%c)가 있습니다\n",
+				   path, type[0]);
 			exit(1);
 		}
 		op_index++;
@@ -628,7 +628,7 @@ static int eval_mm_valid(trace_t *trace, int tracenum, range_t **ranges)
 	/* mm 패키지의 초기화 함수를 호출한다 */
 	if (mm_init() < 0)
 	{
-		malloc_error(tracenum, 0, "mm_init failed.");
+		malloc_error(tracenum, 0, "mm_init에 실패했습니다.");
 		return 0;
 	}
 
@@ -646,7 +646,7 @@ static int eval_mm_valid(trace_t *trace, int tracenum, range_t **ranges)
 			/* 학생의 malloc을 호출한다 */
 			if ((p = mm_malloc(size)) == NULL)
 			{
-				malloc_error(tracenum, i, "mm_malloc failed.");
+				malloc_error(tracenum, i, "mm_malloc에 실패했습니다.");
 				return 0;
 			}
 
@@ -676,7 +676,7 @@ static int eval_mm_valid(trace_t *trace, int tracenum, range_t **ranges)
 			oldp = trace->blocks[index];
 			if ((newp = mm_realloc(oldp, size)) == NULL)
 			{
-				malloc_error(tracenum, i, "mm_realloc failed.");
+				malloc_error(tracenum, i, "mm_realloc에 실패했습니다.");
 				return 0;
 			}
 
@@ -698,8 +698,8 @@ static int eval_mm_valid(trace_t *trace, int tracenum, range_t **ranges)
 			{
 				if (newp[j] != (index & 0xFF))
 				{
-					malloc_error(tracenum, i, "mm_realloc did not preserve the "
-											  "data from old block");
+					malloc_error(tracenum, i, "mm_realloc이 이전 블록의 "
+											  "데이터를 보존하지 못했습니다");
 					return 0;
 				}
 			}
@@ -719,7 +719,7 @@ static int eval_mm_valid(trace_t *trace, int tracenum, range_t **ranges)
 			break;
 
 		default:
-			app_error("Nonexistent request type in eval_mm_valid");
+			app_error("eval_mm_valid에 존재하지 않는 요청 타입이 들어왔습니다");
 		}
 	}
 
@@ -749,7 +749,7 @@ static double eval_mm_util(trace_t *trace, int tracenum, range_t **ranges)
 	/* 힙과 mm malloc 패키지를 초기화한다 */
 	mem_reset_brk();
 	if (mm_init() < 0)
-		app_error("mm_init failed in eval_mm_util");
+		app_error("eval_mm_util에서 mm_init에 실패했습니다");
 
 	for (i = 0; i < trace->num_ops; i++)
 	{
@@ -761,7 +761,7 @@ static double eval_mm_util(trace_t *trace, int tracenum, range_t **ranges)
 			size = trace->ops[i].size;
 
 			if ((p = mm_malloc(size)) == NULL)
-				app_error("mm_malloc failed in eval_mm_util");
+				app_error("eval_mm_util에서 mm_malloc에 실패했습니다");
 
 			/* 영역과 크기를 기록한다 */
 			trace->blocks[index] = p;
@@ -781,7 +781,7 @@ static double eval_mm_util(trace_t *trace, int tracenum, range_t **ranges)
 
 			oldp = trace->blocks[index];
 			if ((newp = mm_realloc(oldp, newsize)) == NULL)
-				app_error("mm_realloc failed in eval_mm_util");
+				app_error("eval_mm_util에서 mm_realloc에 실패했습니다");
 
 			/* 영역과 크기를 기록한다 */
 			trace->blocks[index] = newp;
@@ -807,7 +807,7 @@ static double eval_mm_util(trace_t *trace, int tracenum, range_t **ranges)
 			break;
 
 		default:
-			app_error("Nonexistent request type in eval_mm_util");
+			app_error("eval_mm_util에 존재하지 않는 요청 타입이 들어왔습니다");
 		}
 	}
 
@@ -827,7 +827,7 @@ static void eval_mm_speed(void *ptr)
 	/* 힙을 재설정하고 mm 패키지를 초기화한다 */
 	mem_reset_brk();
 	if (mm_init() < 0)
-		app_error("mm_init failed in eval_mm_speed");
+		app_error("eval_mm_speed에서 mm_init에 실패했습니다");
 
 	/* 각 trace 요청을 해석한다 */
 	for (i = 0; i < trace->num_ops; i++)
@@ -838,7 +838,7 @@ static void eval_mm_speed(void *ptr)
 			index = trace->ops[i].index;
 			size = trace->ops[i].size;
 			if ((p = mm_malloc(size)) == NULL)
-				app_error("mm_malloc error in eval_mm_speed");
+				app_error("eval_mm_speed에서 mm_malloc 오류가 발생했습니다");
 			trace->blocks[index] = p;
 			break;
 
@@ -847,7 +847,7 @@ static void eval_mm_speed(void *ptr)
 			newsize = trace->ops[i].size;
 			oldp = trace->blocks[index];
 			if ((newp = mm_realloc(oldp, newsize)) == NULL)
-				app_error("mm_realloc error in eval_mm_speed");
+				app_error("eval_mm_speed에서 mm_realloc 오류가 발생했습니다");
 			trace->blocks[index] = newp;
 			break;
 
@@ -858,7 +858,7 @@ static void eval_mm_speed(void *ptr)
 			break;
 
 		default:
-			app_error("Nonexistent request type in eval_mm_valid");
+			app_error("eval_mm_valid에 존재하지 않는 요청 타입이 들어왔습니다");
 		}
 }
 
@@ -881,8 +881,8 @@ static int eval_libc_valid(trace_t *trace, int tracenum)
 		case ALLOC: /* malloc */
 			if ((p = malloc(trace->ops[i].size)) == NULL)
 			{
-				malloc_error(tracenum, i, "libc malloc failed");
-				unix_error("System message");
+				malloc_error(tracenum, i, "libc malloc에 실패했습니다");
+				unix_error("시스템 메시지");
 			}
 			trace->blocks[trace->ops[i].index] = p;
 			break;
@@ -892,8 +892,8 @@ static int eval_libc_valid(trace_t *trace, int tracenum)
 			oldp = trace->blocks[trace->ops[i].index];
 			if ((newp = realloc(oldp, newsize)) == NULL)
 			{
-				malloc_error(tracenum, i, "libc realloc failed");
-				unix_error("System message");
+				malloc_error(tracenum, i, "libc realloc에 실패했습니다");
+				unix_error("시스템 메시지");
 			}
 			trace->blocks[trace->ops[i].index] = newp;
 			break;
@@ -903,7 +903,7 @@ static int eval_libc_valid(trace_t *trace, int tracenum)
 			break;
 
 		default:
-			app_error("invalid operation type  in eval_libc_valid");
+			app_error("eval_libc_valid에 잘못된 연산 타입이 들어왔습니다");
 		}
 	}
 
@@ -929,7 +929,7 @@ static void eval_libc_speed(void *ptr)
 			index = trace->ops[i].index;
 			size = trace->ops[i].size;
 			if ((p = malloc(size)) == NULL)
-				unix_error("malloc failed in eval_libc_speed");
+				unix_error("eval_libc_speed에서 malloc에 실패했습니다");
 			trace->blocks[index] = p;
 			break;
 
@@ -938,7 +938,7 @@ static void eval_libc_speed(void *ptr)
 			newsize = trace->ops[i].size;
 			oldp = trace->blocks[index];
 			if ((newp = realloc(oldp, newsize)) == NULL)
-				unix_error("realloc failed in eval_libc_speed\n");
+				unix_error("eval_libc_speed에서 realloc에 실패했습니다");
 
 			trace->blocks[index] = newp;
 			break;
@@ -968,14 +968,14 @@ static void printresults(int n, stats_t *stats)
 
 	/* 각 trace의 개별 결과를 출력한다 */
 	printf("%5s%7s %5s%8s%10s%6s\n",
-		   "trace", " valid", "util", "ops", "secs", "Kops");
+		   "추적", " 정상", "활용", "연산", "시간", "Kops");
 	for (i = 0; i < n; i++)
 	{
 		if (stats[i].valid)
 		{
 			printf("%2d%10s%5.0f%%%8.0f%10.6f%6.0f\n",
 				   i,
-				   "yes",
+				   "예",
 				   stats[i].util * 100.0,
 				   stats[i].ops,
 				   stats[i].secs,
@@ -988,7 +988,7 @@ static void printresults(int n, stats_t *stats)
 		{
 			printf("%2d%10s%6s%8s%10s%6s\n",
 				   i,
-				   "no",
+				   "아니오",
 				   "-",
 				   "-",
 				   "-",
@@ -1000,7 +1000,7 @@ static void printresults(int n, stats_t *stats)
 	if (errors == 0)
 	{
 		printf("%12s%5.0f%%%8.0f%10.6f%6.0f\n",
-			   "Total       ",
+			   "합계        ",
 			   (util / n) * 100.0,
 			   ops,
 			   secs,
@@ -1009,7 +1009,7 @@ static void printresults(int n, stats_t *stats)
 	else
 	{
 		printf("%12s%6s%8s%10s%6s\n",
-			   "Total       ",
+			   "합계        ",
 			   "-",
 			   "-",
 			   "-",
@@ -1041,7 +1041,7 @@ void unix_error(char *msg)
 void malloc_error(int tracenum, int opnum, char *msg)
 {
 	errors++;
-	printf("ERROR [trace %d, line %d]: %s\n", tracenum, LINENUM(opnum), msg);
+	printf("오류 [trace %d, 줄 %d]: %s\n", tracenum, LINENUM(opnum), msg);
 }
 
 /*
@@ -1049,14 +1049,14 @@ void malloc_error(int tracenum, int opnum, char *msg)
  */
 static void usage(void)
 {
-	fprintf(stderr, "Usage: mdriver [-hvVal] [-f <file>] [-t <dir>]\n");
-	fprintf(stderr, "Options\n");
-	fprintf(stderr, "\t-a         Don't check the team structure.\n");
-	fprintf(stderr, "\t-f <file>  Use <file> as the trace file.\n");
-	fprintf(stderr, "\t-g         Generate summary info for autograder.\n");
-	fprintf(stderr, "\t-h         Print this message.\n");
-	fprintf(stderr, "\t-l         Run libc malloc as well.\n");
-	fprintf(stderr, "\t-t <dir>   Directory to find default traces.\n");
-	fprintf(stderr, "\t-v         Print per-trace performance breakdowns.\n");
-	fprintf(stderr, "\t-V         Print additional debug info.\n");
+	fprintf(stderr, "사용법: mdriver [-hvVal] [-f <파일>] [-t <디렉터리>]\n");
+	fprintf(stderr, "옵션\n");
+	fprintf(stderr, "\t-a         팀 구조를 검사하지 않습니다.\n");
+	fprintf(stderr, "\t-f <파일>  <파일>을 trace 파일로 사용합니다.\n");
+	fprintf(stderr, "\t-g         자동 채점용 요약 정보를 생성합니다.\n");
+	fprintf(stderr, "\t-h         이 메시지를 출력합니다.\n");
+	fprintf(stderr, "\t-l         libc malloc도 함께 실행합니다.\n");
+	fprintf(stderr, "\t-t <디렉터리> 기본 trace를 찾을 디렉터리입니다.\n");
+	fprintf(stderr, "\t-v         trace별 성능 분석을 출력합니다.\n");
+	fprintf(stderr, "\t-V         추가 디버그 정보를 출력합니다.\n");
 }

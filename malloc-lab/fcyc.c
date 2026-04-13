@@ -109,7 +109,7 @@ static void clear()
     if (!cache_buf) {
 	cache_buf = malloc(cache_bytes);
 	if (!cache_buf) {
-	    fprintf(stderr, "Fatal error.  Malloc returned null when trying to clear cache\n");
+	    fprintf(stderr, "치명적 오류: 캐시를 비우는 중 malloc이 null을 반환했습니다\n");
 	    exit(1);
 	}
     }
@@ -153,7 +153,7 @@ double fcyc(test_funct f, void *argp)
 #ifdef DEBUG
     {
 	int i;
-	printf(" %d smallest values: [", kbest);
+	printf(" 가장 작은 값 %d개: [", kbest);
 	for (i = 0; i < kbest; i++)
 	    printf("%.0f%s", values[i], i==kbest-1 ? "]\n" : ", ");
     }
@@ -241,7 +241,6 @@ void set_fcyc_epsilon(double epsilon_arg)
 {
     epsilon = epsilon_arg;
 }
-
 
 
 
