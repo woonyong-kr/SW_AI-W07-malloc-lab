@@ -11,6 +11,8 @@ CFLAGS = -Wall -O2 -g
 
 OBJS = mdriver.o mm.o memlib.o fsecs.o fcyc.o clock.o ftimer.o
 
+.PHONY: handin clean test-all
+
 mdriver: $(OBJS)
 	$(CC) $(CFLAGS) -o mdriver $(OBJS)
 
@@ -25,7 +27,9 @@ clock.o: clock.c clock.h
 handin:
 	cp mm.c $(HANDINDIR)/$(TEAM)-$(VERSION)-mm.c
 
+test-all: mdriver
+	./mdriver -v
+
 clean:
 	rm -f *~ *.o mdriver
-
 

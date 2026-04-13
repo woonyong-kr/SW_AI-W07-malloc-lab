@@ -1,14 +1,3 @@
-/*
- * mm-naive.c - 가장 빠르지만 메모리 효율이 가장 낮은 malloc 패키지.
- *
- * 이 단순한 방식에서는 brk 포인터를 단순히 증가시켜 블록을 할당한다.
- * 블록은 순수한 페이로드만 가지며 헤더나 푸터가 없다.
- * 블록은 병합되거나 재사용되지 않는다. realloc은
- * mm_malloc과 mm_free를 직접 사용해 구현한다.
- *
- * 학생에게: 이 헤더 주석을 여러분의 해법을 높은 수준에서 설명하는
- * 자체 헤더 주석으로 교체하라.
- */
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -18,78 +7,192 @@
 #include "mm.h"
 #include "memlib.h"
 
-/*********************************************************
- * 학생에게: 다른 작업을 하기 전에 아래 구조체에
- * 팀 정보를 먼저 입력하라.
- ********************************************************/
+#define IMPLICIT 0
+#define EXPLICIT 1
+#define SEGREGATED 2
+
+#define FIRST_FIT 0
+#define BEST_FIT 1
+#define NEXT_FIT 2
+
+#define STRATEGY IMPLICIT
+#define FIT_STRATEGY NEXT_FIT
+
+#define WSIZE 4
+#define DSIZE 8
+#define CHUNKSIZE (1 << 12)
+
+#define MAX(x, y) ((x) > (y) ? (x) : (y))
+
+#define PACK(size, alloc) ((size) | (alloc))
+
+#define GET(p) (*(unsigned int *)(p))
+#define PUT(p, val) (*(unsigned int *)(p) = (val))
+
+#define GET_SIZE(p) (GET(p) & ~0x7)
+#define GET_ALLOC(p) (GET(p) & 0x1)
+
+#define HDRP(bp) ((char *)(bp) - WSIZE)
+#define FTRP(bp) ((char *)(bp) + GET_SIZE(HDRP(bp)) - DSIZE)
+
+#define NEXT_BLKP(bp) ((char *)(bp) + GET_SIZE(((char *)(bp) - WSIZE)))
+#define PREV_BLKP(bp) ((char *)(bp) - GET_SIZE(((char *)(bp) - DSIZE)))
+
+#define ALIGN(size)       (((size) + (DSIZE - 1)) & ~0x7)
+#define CHUNK_ALIGN(size) (((size) + (CHUNKSIZE - 1)) & ~(CHUNKSIZE - 1))
+
+static char *heap_listp;
+
+static void init(void);
+static void *extend_heap(size_t words);
+static void *coalesce(void *bp);
+static void *find_fit(size_t asize);
+static void place(void *bp, size_t asize);
+
 team_t team = {
-    /* 팀 이름 */
     "ateam",
-    /* 첫 번째 팀원의 전체 이름 */
     "Harry Bovik",
-    /* 첫 번째 팀원의 이메일 주소 */
     "bovik@cs.cmu.edu",
-    /* 두 번째 팀원의 전체 이름(없으면 빈칸) */
     "",
-    /* 두 번째 팀원의 이메일 주소(없으면 빈칸) */
     ""};
 
-/* 워드(4) 또는 더블 워드(8) 정렬 */
-#define ALIGNMENT 8
+#if STRATEGY == IMPLICIT
+#include "mm_implicit.c"
+#elif STRATEGY == EXPLICIT
+#include "mm_explicit.c"
+#elif STRATEGY == SEGREGATED
+#include "mm_segregated.c"
+#endif
 
-/* ALIGNMENT의 가장 가까운 배수로 올림 */
-#define ALIGN(size) (((size) + (ALIGNMENT - 1)) & ~0x7)
+static void *extend_heap(size_t words)
+{
+    char *bp;
+    size_t size;
 
-#define SIZE_T_SIZE (ALIGN(sizeof(size_t)))
+    size = (words % 2) ? (words + 1) * WSIZE : words * WSIZE;
+    if ((long)(bp = mem_sbrk(size)) == -1)
+        return NULL;
 
-/*
- * mm_init - malloc 패키지를 초기화한다.
- */
+    PUT(HDRP(bp), PACK(size, 0));
+    PUT(FTRP(bp), PACK(size, 0));
+    PUT(HDRP(NEXT_BLKP(bp)), PACK(0, 1));
+
+    return coalesce(bp);
+}
+
 int mm_init(void)
 {
+    if ((heap_listp = mem_sbrk(4 * WSIZE)) == (void *)-1)
+        return -1;
+
+    PUT(heap_listp, 0);
+    PUT(heap_listp + WSIZE, PACK(DSIZE, 1));
+    PUT(heap_listp + (2 * WSIZE), PACK(DSIZE, 1));
+    PUT(heap_listp + (3 * WSIZE), PACK(0, 1));
+    heap_listp += 2 * WSIZE;
+
+    init();
+
+    if (extend_heap(CHUNKSIZE / WSIZE) == NULL)
+        return -1;
     return 0;
 }
 
-/*
- * mm_malloc - brk 포인터를 증가시켜 블록을 할당한다.
- *     항상 정렬 크기의 배수인 블록을 할당한다.
- */
 void *mm_malloc(size_t size)
 {
-    int newsize = ALIGN(size + SIZE_T_SIZE);
-    void *p = mem_sbrk(newsize);
-    if (p == (void *)-1)
+    size_t asize;
+    size_t extendsize;
+    void *bp;
+
+    if (size == 0)
         return NULL;
+
+    if (size <= DSIZE)
+        asize = 2 * DSIZE;
     else
-    {
-        *(size_t *)p = size;
-        return (void *)((char *)p + SIZE_T_SIZE);
+        asize = ALIGN(size + DSIZE);
+
+    if ((bp = find_fit(asize)) != NULL) {
+        place(bp, asize);
+        return bp;
     }
+
+    extendsize = CHUNK_ALIGN(asize);
+    bp = extend_heap(extendsize / WSIZE);
+    if (bp == NULL)
+        return NULL;
+    place(bp, asize);
+    return bp;
 }
 
-/*
- * mm_free - 블록을 해제해도 아무 일도 하지 않는다.
- */
 void mm_free(void *ptr)
 {
+    size_t size = GET_SIZE(HDRP(ptr));
+
+    PUT(HDRP(ptr), PACK(size, 0));
+    PUT(FTRP(ptr), PACK(size, 0));
+    coalesce(ptr);
 }
 
-/*
- * mm_realloc - mm_malloc과 mm_free를 조합해 단순하게 구현한다.
- */
 void *mm_realloc(void *ptr, size_t size)
 {
-    void *oldptr = ptr;
+    size_t oldsize;
+    size_t asize;
+    size_t next_alloc;
+    size_t next_size;
+    size_t combined;
     void *newptr;
-    size_t copySize;
+
+    if (ptr == NULL)
+        return mm_malloc(size);
+    if (size == 0) {
+        mm_free(ptr);
+        return NULL;
+    }
+
+    oldsize = GET_SIZE(HDRP(ptr));
+
+    if (size <= DSIZE)
+        asize = 2 * DSIZE;
+    else
+        asize = ALIGN(size + DSIZE);
+
+    if (oldsize == asize)
+        return ptr;
+
+    if (asize <= oldsize) {
+        if ((oldsize - asize) >= (2 * DSIZE)) {
+            PUT(HDRP(ptr), PACK(asize, 1));
+            PUT(FTRP(ptr), PACK(asize, 1));
+            newptr = NEXT_BLKP(ptr);
+            PUT(HDRP(newptr), PACK(oldsize - asize, 0));
+            PUT(FTRP(newptr), PACK(oldsize - asize, 0));
+            coalesce(newptr);
+        }
+        return ptr;
+    }
+
+    next_alloc = GET_ALLOC(HDRP(NEXT_BLKP(ptr)));
+    next_size = GET_SIZE(HDRP(NEXT_BLKP(ptr)));
+
+    if (!next_alloc && (oldsize + next_size) >= asize) {
+        combined = oldsize + next_size;
+        PUT(HDRP(ptr), PACK(combined, 1));
+        PUT(FTRP(ptr), PACK(combined, 1));
+        if ((combined - asize) >= (2 * DSIZE)) {
+            PUT(HDRP(ptr), PACK(asize, 1));
+            PUT(FTRP(ptr), PACK(asize, 1));
+            newptr = NEXT_BLKP(ptr);
+            PUT(HDRP(newptr), PACK(combined - asize, 0));
+            PUT(FTRP(newptr), PACK(combined - asize, 0));
+        }
+        return ptr;
+    }
 
     newptr = mm_malloc(size);
     if (newptr == NULL)
         return NULL;
-    copySize = *(size_t *)((char *)oldptr - SIZE_T_SIZE);
-    if (size < copySize)
-        copySize = size;
-    memcpy(newptr, oldptr, copySize);
-    mm_free(oldptr);
+    memcpy(newptr, ptr, oldsize - DSIZE);
+    mm_free(ptr);
     return newptr;
 }
