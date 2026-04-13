@@ -1,5 +1,6 @@
 *.o
 mdriver
+.vscode/
 
 # 스킬 symlink (로컬 전용)
 .claude/skills/
